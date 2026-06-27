@@ -1,9 +1,9 @@
 "use client";
 
-import { CATEGORIES } from "@/data/categories";
-import { Category } from "@/types";
+import { Category, CategoryRecord } from "@/types";
 
 interface FilterSidebarProps {
+  categories: CategoryRecord[];
   selectedCategories: Category[];
   onToggleCategory: (category: Category) => void;
   maxPrice: number;
@@ -13,6 +13,7 @@ interface FilterSidebarProps {
 }
 
 export function FilterSidebar({
+  categories,
   selectedCategories,
   onToggleCategory,
   maxPrice,
@@ -25,13 +26,13 @@ export function FilterSidebar({
       <div>
         <h3 className="font-poppins text-xs uppercase tracking-widest text-gold">Category</h3>
         <ul className="mt-4 space-y-3">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <li key={cat.id}>
               <label className="flex cursor-pointer items-center gap-3 text-sm font-inter text-black/70 hover:text-black">
                 <input
                   type="checkbox"
-                  checked={selectedCategories.includes(cat.id)}
-                  onChange={() => onToggleCategory(cat.id)}
+                  checked={selectedCategories.includes(cat.slug)}
+                  onChange={() => onToggleCategory(cat.slug)}
                   className="h-4 w-4 accent-[#d4af37]"
                 />
                 {cat.name}

@@ -4,13 +4,12 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ShoppingBag } from "lucide-react";
 import { useShop } from "@/lib/cart-context";
-import { PRODUCTS } from "@/data/products";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { OrderSummary } from "@/components/cart/OrderSummary";
 import { Button } from "@/components/ui/Button";
 
 export default function CartPage() {
-  const { cart, subtotal } = useShop();
+  const { cart, subtotal, products } = useShop();
   const [discount, setDiscount] = useState(0);
 
   if (cart.length === 0) {
@@ -43,7 +42,7 @@ export default function CartPage() {
           <div>
             <AnimatePresence>
               {cart.map((item) => {
-                const product = PRODUCTS.find((p) => p.id === item.productId);
+                const product = products.find((p) => p.id === item.productId);
                 if (!product) return null;
                 return (
                   <CartLineItem

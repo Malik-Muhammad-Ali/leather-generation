@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 import { useShop } from "@/lib/cart-context";
-import { PRODUCTS } from "@/data/products";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Stepper, CHECKOUT_STEPS } from "@/components/checkout/Stepper";
@@ -16,9 +15,12 @@ import { Address } from "@/types";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, subtotal, clearCart } = useShop();
+  const { cart, subtotal, clearCart, products } = useShop();
   const [step, setStep] = useState(0);
   const [placed, setPlaced] = useState(false);
+  const [placing, setPlacing] = useState(false);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [address, setAddress] = useState<Partial<Address>>({});
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [payment, setPayment] = useState<PaymentDetails>({
@@ -34,9 +36,41 @@ export default function CheckoutPage() {
   const next = () => setStep((s) => Math.min(s + 1, CHECKOUT_STEPS.length - 1));
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
-  const handlePlaceOrder = () => {
-    setPlaced(true);
-    clearCart();
+  const handlePlaceOrder = async () => {
+    if (!address.fullName || !address.line1 || !address.city || !address.country) {
+      setError("Please fill in your address details before placing the order.");
+      setStep(0);
+      return;
+    }
+
+    setPlacing(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cart,
+          customer: address,
+          shippingMethod,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "Failed to place order.");
+      }
+
+      const { order } = await res.json();
+      setOrderNumber(order.orderNumber);
+      setPlaced(true);
+      clearCart();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to place order.");
+    } finally {
+      setPlacing(false);
+    }
   };
 
   if (placed) {
@@ -46,6 +80,11 @@ export default function CheckoutPage() {
           <CheckCircle2 size={56} className="text-gold" />
         </motion.div>
         <h1 className="mt-6 font-playfair text-3xl text-black">Order Confirmed</h1>
+        {orderNumber && (
+          <p className="mt-2 font-poppins text-sm uppercase tracking-widest text-gold">
+            Order {orderNumber}
+          </p>
+        )}
         <p className="mt-2 max-w-md font-inter text-sm text-black/60">
           Thank you for your purchase. A confirmation email is on its way, and your pieces will be
           carefully prepared by our artisans.
@@ -92,7 +131,7 @@ export default function CheckoutPage() {
                     <h3 className="font-playfair text-xl text-black">Review Your Order</h3>
                     <div className="space-y-3">
                       {cart.map((item) => {
-                        const product = PRODUCTS.find((p) => p.id === item.productId);
+                        const product = products.find((p) => p.id === item.productId);
                         if (!product) return null;
                         return (
                           <div key={`${item.productId}-${item.color}-${item.size}`} className="flex justify-between font-inter text-sm text-black/70">
@@ -114,6 +153,8 @@ export default function CheckoutPage() {
               </motion.div>
             </AnimatePresence>
 
+            {error && <p className="mt-6 font-inter text-sm text-red-600">{error}</p>}
+
             <div className="mt-10 flex justify-between">
               {step > 0 ? (
                 <Button variant="outline" onClick={back} className="!text-black !border-black/30 hover:!border-gold hover:!text-gold">
@@ -127,8 +168,8 @@ export default function CheckoutPage() {
                   Continue
                 </Button>
               ) : (
-                <Button variant="primary" onClick={handlePlaceOrder}>
-                  Place Order
+                <Button variant="primary" onClick={handlePlaceOrder} disabled={placing}>
+                  {placing ? "Placing Order..." : "Place Order"}
                 </Button>
               )}
             </div>

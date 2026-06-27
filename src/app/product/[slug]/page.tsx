@@ -1,18 +1,14 @@
 import { notFound } from "next/navigation";
-import { getProductBySlug, getRelatedProducts, PRODUCTS } from "@/data/products";
+import { getProductBySlug, getRelatedProducts } from "@/lib/data/products";
 import { ProductDetailContent } from "@/components/product/ProductDetailContent";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
 
-export function generateStaticParams() {
-  return PRODUCTS.map((p) => ({ slug: p.slug }));
-}
-
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const related = getRelatedProducts(product);
+  const related = await getRelatedProducts(product);
 
   return (
     <>

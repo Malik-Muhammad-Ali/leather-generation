@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Cormorant_Garamond, Inter, Poppins } from "next/font/google";
 import "./globals.css";
-import { ShopProvider } from "@/lib/cart-context";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { LoadingScreen } from "@/components/layout/LoadingScreen";
+import { SiteShell } from "@/components/layout/SiteShell";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -46,12 +43,7 @@ export default function RootLayout({
       className={`${playfair.variable} ${cormorant.variable} ${inter.variable} ${poppins.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-cream text-black font-inter">
-        <ShopProvider>
-          <LoadingScreen />
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </ShopProvider>
+        <SiteShell>{children}</SiteShell>
       </body>
     </html>
   );

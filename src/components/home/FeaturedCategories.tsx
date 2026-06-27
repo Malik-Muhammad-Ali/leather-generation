@@ -3,11 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { CATEGORIES } from "@/data/categories";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { TiltCard } from "@/components/ui/TiltCard";
+import { CategoryRecord } from "@/types";
 
-export function FeaturedCategories() {
+export function FeaturedCategories({ categories }: { categories: CategoryRecord[] }) {
+  if (categories.length === 0) return null;
+
   return (
     <section className="bg-cream py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
@@ -18,7 +20,7 @@ export function FeaturedCategories() {
         />
 
         <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {CATEGORIES.map((cat, i) => (
+          {categories.map((cat, i) => (
             <motion.div
               key={cat.id}
               initial={{ opacity: 0, y: 30 }}
@@ -27,7 +29,7 @@ export function FeaturedCategories() {
               transition={{ duration: 0.6, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ y: -6 }}
             >
-              <Link href={`/shop?category=${cat.id}`} className="group block">
+              <Link href={`/shop?category=${cat.slug}`} className="group block">
                 <TiltCard max={10} className="relative aspect-[3/4] overflow-hidden">
                   <Image
                     src={cat.image}

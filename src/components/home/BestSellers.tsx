@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { getBestSellers } from "@/data/products";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { QuickViewModal } from "@/components/shop/QuickViewModal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Product } from "@/types";
 
-export function BestSellers() {
+export function BestSellers({ products }: { products: Product[] }) {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
-  const products = getBestSellers();
+
+  if (products.length === 0) return null;
 
   return (
     <section className="bg-black py-20 sm:py-28">

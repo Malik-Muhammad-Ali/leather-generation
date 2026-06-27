@@ -3,23 +3,31 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { PRODUCTS } from "@/data/products";
-import { Category, Product } from "@/types";
+import { Category, CategoryRecord, Product } from "@/types";
 import { FilterSidebar } from "@/components/shop/FilterSidebar";
 import { SortBar, type SortOption } from "@/components/shop/SortBar";
 import { ProductGrid } from "@/components/shop/ProductGrid";
 import { QuickViewModal } from "@/components/shop/QuickViewModal";
 
-const MAX_PRICE = Math.max(...PRODUCTS.map((p) => p.price));
-
-export function ShopContent() {
+export function ShopContent({
+  products,
+  categories,
+}: {
+  products: Product[];
+  categories: CategoryRecord[];
+}) {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get("category") as Category | null;
+
+  const maxPrice = useMemo(
+    () => (products.length ? Math.max(...products.map((p) => p.price)) : 0),
+    [products]
+  );
 
   const [selectedCategories, setSelectedCategories] = useState<Category[]>(
     initialCategory ? [initialCategory] : []
   );
-  const [priceRange, setPriceRange] = useState(MAX_PRICE);
+  const [priceRange, setPriceRange] = useState(maxPrice);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortOption>("featured");
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -31,7 +39,7 @@ export function ShopContent() {
   };
 
   const filtered = useMemo(() => {
-    let result = PRODUCTS.filter((p) => p.price <= priceRange);
+    let result = products.filter((p) => p.price <= (priceRange || maxPrice));
     if (selectedCategories.length > 0) {
       result = result.filter((p) => selectedCategories.includes(p.category));
     }
@@ -53,7 +61,7 @@ export function ShopContent() {
         result = [...result].sort((a, b) => (b.isBestSeller ? 1 : 0) - (a.isBestSeller ? 1 : 0));
     }
     return result;
-  }, [selectedCategories, priceRange, search, sort]);
+  }, [products, selectedCategories, priceRange, maxPrice, search, sort]);
 
   return (
     <div className="bg-cream pt-32 pb-24">
@@ -70,9 +78,10 @@ export function ShopContent() {
 
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[240px_1fr]">
           <FilterSidebar
+            categories={categories}
             selectedCategories={selectedCategories}
             onToggleCategory={toggleCategory}
-            maxPrice={MAX_PRICE}
+            maxPrice={maxPrice}
             priceRange={priceRange}
             onPriceChange={setPriceRange}
             className="hidden lg:block"
@@ -92,9 +101,10 @@ export function ShopContent() {
                 Filters
               </summary>
               <FilterSidebar
+                categories={categories}
                 selectedCategories={selectedCategories}
                 onToggleCategory={toggleCategory}
-                maxPrice={MAX_PRICE}
+                maxPrice={maxPrice}
                 priceRange={priceRange}
                 onPriceChange={setPriceRange}
                 className="mt-4"

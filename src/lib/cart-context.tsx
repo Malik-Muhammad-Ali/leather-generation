@@ -8,12 +8,13 @@ import {
   useMemo,
   useState,
 } from "react";
-import { CartItem } from "@/types";
-import { PRODUCTS } from "@/data/products";
+import { CartItem, Product } from "@/types";
 
 interface ShopContextValue {
   cart: CartItem[];
   wishlist: string[];
+  products: Product[];
+  getProduct: (id: string) => Product | undefined;
   addToCart: (item: CartItem) => void;
   removeFromCart: (productId: string, color?: string, size?: string) => void;
   updateQuantity: (productId: string, quantity: number, color?: string, size?: string) => void;
@@ -34,6 +35,7 @@ const WISHLIST_KEY = "lg-wishlist";
 export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isCartOpen, setCartOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -49,6 +51,16 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       // ignore corrupted storage
     }
     setHydrated(true);
+  }, []);
+
+  // Cart/wishlist only ever store productId references, so any component that
+  // needs price/name/etc. for those ids (cart, checkout, wishlist pages) reads
+  // from this shared catalog fetch instead of each fetching its own copy.
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((body) => setProducts(body.products ?? []))
+      .catch(() => setProducts([]));
   }, []);
 
   useEffect(() => {
@@ -103,18 +115,25 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
 
   const isWishlisted = useCallback((productId: string) => wishlist.includes(productId), [wishlist]);
 
+  const getProduct = useCallback(
+    (id: string) => products.find((p) => p.id === id),
+    [products]
+  );
+
   const cartCount = useMemo(() => cart.reduce((sum, i) => sum + i.quantity, 0), [cart]);
 
   const subtotal = useMemo(() => {
     return cart.reduce((sum, i) => {
-      const product = PRODUCTS.find((p) => p.id === i.productId);
+      const product = products.find((p) => p.id === i.productId);
       return sum + (product?.price ?? 0) * i.quantity;
     }, 0);
-  }, [cart]);
+  }, [cart, products]);
 
   const value: ShopContextValue = {
     cart,
     wishlist,
+    products,
+    getProduct,
     addToCart,
     removeFromCart,
     updateQuantity,
